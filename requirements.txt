@@ -1,4 +1,4 @@
-Flask
-python-telegram-bot
-paypalrestsdk
+flask
+python-telegram-bot==13.7
 gunicorn
+requests
