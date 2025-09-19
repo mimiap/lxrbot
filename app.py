@@ -2,11 +2,11 @@ import os
 import logging
 from flask import Flask, request, jsonify
 import telegram
-from imgurpython import ImgurClient
+from telegram import InputFile
 
 # ---- CONFIG ----
 BOT_TOKEN = os.getenv("BOT_TOKEN")  # iš Render Environment
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")  # tavo ID (ar grupės ID)
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")  # tavo ID arba grupės ID
 PAYPAL_SECRET = os.getenv("PAYPAL_SECRET")  # jei reikia PayPal validacijai
 
 # Telegram Bot
@@ -18,57 +18,35 @@ app = Flask(__name__)
 # Logger (kad matytum Render loguose)
 logging.basicConfig(level=logging.INFO)
 
-
-# ---- ROUTES ----
-
 @app.route("/")
 def home():
-    return "Bot is running!", 200
+    return "Bot is running!"
 
-
-# Telegram webhook
-@app.route("/webhook", methods=["POST"])
+@app.route("/telegram", methods=["POST"])
 def telegram_webhook():
-    update = request.get_json()
+    data = request.get_json()
+    logging.info(f"Got update: {data}")
 
-    if "message" in update:
-        chat_id = update["message"]["chat"]["id"]
-        text = update["message"].get("text", "")
+    if "message" in data:
+        chat_id = data["message"]["chat"]["id"]
+        text = data["message"].get("text", "")
 
-        # Pvz.: vartotojas parašo /start
         if text == "/start":
             bot.send_message(chat_id=chat_id, text="Sveikas! Botas veikia 🚀")
+        else:
+            bot.send_message(chat_id=chat_id, text=f"Gavai žinutę: {text}")
 
-        # Pvz.: /buy
-        elif text == "/buy":
-            bot.send_message(
-                chat_id=chat_id,
-                text="Paspausk nuorodą apmokėjimui: https://www.paypal.com/paypalme/tavovardas/5"
-            )
+    return jsonify({"status": "ok"})
 
-    return "ok", 200
-
-
-# PayPal webhook (čia ateina signalai iš PayPal API)
-@app.route("/paypal-webhook", methods=["POST"])
+@app.route("/paypal", methods=["POST"])
 def paypal_webhook():
-    data = request.get_json()
-    logging.info(f"PayPal data: {data}")
+    # Čia gali pridėti PayPal validaciją pagal savo logiką
+    secret = request.headers.get("Paypal-Secret")
+    if secret == PAYPAL_SECRET:
+        logging.info("PayPal įvykis gautas")
+        return jsonify({"status": "paypal ok"})
+    else:
+        return jsonify({"error": "Unauthorized"}), 401
 
-    # pvz., patikrinti apmokėjimo statusą
-    if data and data.get("event_type") == "PAYMENT.CAPTURE.COMPLETED":
-        payer = data["resource"]["payer"]["email_address"]
-        amount = data["resource"]["amount"]["value"]
-
-        # siunčiam pranešimą į Telegram
-        bot.send_message(
-            chat_id=TELEGRAM_CHAT_ID,
-            text=f"Gautas mokėjimas ✅\nSuma: {amount} EUR\nNuo: {payer}"
-        )
-
-    return jsonify({"status": "success"}), 200
-
-
-# ---- RUN LOCAL (tik testams, Render naudoja gunicorn) ----
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
