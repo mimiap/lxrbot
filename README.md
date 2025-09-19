@@ -17,7 +17,7 @@ IMPORTANT: **This project does NOT contain any secret keys**. Set the necessary 
 ## Deploy steps (quick)
 1. Push this repo to GitHub.
 2. On Render.com, create a new Web Service and connect the repo.
-   - Build command: leave empty (Render uses pip install from requirements.txt) or set to: `pip install -r requirements.txt`
+   - Build command: leave empty (Render uses pip install from requirements.txt) or set to: `pip install -r requirements_fixed.txt`
    - Start command: `gunicorn app:app`
    - Add env vars above in Render Environment settings.
 3. Deploy and copy the public URL (this will be your `BASE_URL`).
