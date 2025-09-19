@@ -197,7 +197,7 @@ def telegram_webhook():
         elif text.startswith('/buy'):
             # Create PayPal order server-side and return approval link
             # Use POST /create-order via internal request to keep one endpoint
-            resp = requests.post(url_for('create_order', _external=True), json={'chat_id': chat_id})
+            resp = requests.post(f"{BASE_URL}/create-order", json={'chat_id': chat_id})
             if resp.status_code == 200:
                 data = resp.json()
                 approval_url = data.get('approval_url') or data.get('approval_url') or data.get('approval_url') or data.get('approval_url')
