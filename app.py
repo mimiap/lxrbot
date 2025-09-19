@@ -54,5 +54,3 @@ def index():
 
 if __name__ == "__main__":
     app.run(port=10000)
-
-print("Chat ID:", chat_id)
