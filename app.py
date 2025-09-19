@@ -2,6 +2,7 @@ import os
 import logging
 from flask import Flask, request, jsonify
 import telegram
+from imgurpython import ImgurClient
 
 # ---- CONFIG ----
 BOT_TOKEN = os.getenv("BOT_TOKEN")  # iš Render Environment
