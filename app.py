@@ -37,8 +37,15 @@ def telegram_send_message(chat_id: int, text: str, parse_mode=None):
     payload = {"chat_id": chat_id, "text": text}
     if parse_mode:
         payload["parse_mode"] = parse_mode
-    r = requests.post(url, json=payload, timeout=15)
-    return r.ok, r.json() if r.headers.get('Content-Type','').startswith('application/json') else r.text
+    try:
+        r = requests.post(url, json=payload, timeout=15)
+        r.raise_for_status()
+        if r.headers.get('Content-Type', '').startswith('application/json'):
+            return r.ok, r.json()
+        return r.ok, r.text
+    except Exception as e:
+        print(f"Telegram send error: {e}")
+        return False, str(e)
 
 def telegram_send_document(chat_id: int, file_url: str, filename: str):
     # Telegram will fetch file from file_url (must be publicly reachable)
