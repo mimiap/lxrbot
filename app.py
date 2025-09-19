@@ -1,56 +1,73 @@
 import os
+import logging
 from flask import Flask, request, jsonify
 import telegram
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-TOKEN = os.getenv("BOT_TOKEN")
-PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
-PAYPAL_SECRET = os.getenv("PAYPAL_SECRET")
+# ---- CONFIG ----
+BOT_TOKEN = os.getenv("BOT_TOKEN")  # iš Render Environment
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")  # tavo ID (ar grupės ID)
+PAYPAL_SECRET = os.getenv("PAYPAL_SECRET")  # jei reikia PayPal validacijai
 
-bot = telegram.Bot(token=TOKEN)
+# Telegram Bot
+bot = telegram.Bot(token=BOT_TOKEN)
+
+# Flask app
 app = Flask(__name__)
 
-# /start komanda
-@app.route(f"/{TOKEN}", methods=["POST"])
-def respond():
-    update = telegram.Update.de_json(request.get_json(force=True), bot)
-    chat_id = update.message.chat.id
-    text = update.message.text
-
-    if text == "/start":
-        bot.sendMessage(chat_id=chat_id, text="Sveikas! Paspausk /buy kad įsigytum produktą.")
-    elif text == "/buy":
-        keyboard = [
-            [InlineKeyboardButton("💳 Mokėti per PayPal", url="https://www.sandbox.paypal.com/checkoutnow?token=FAKE_TOKEN")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        bot.sendMessage(chat_id=chat_id, text="Spausk mygtuką ir atlik mokėjimą:", reply_markup=reply_markup)
-    else:
-        bot.sendMessage(chat_id=chat_id, text="Nežinau tokios komandos 🤔")
-
-    return "ok"
+# Logger (kad matytum Render loguose)
+logging.basicConfig(level=logging.INFO)
 
 
-# PayPal webhook endpoint
-@app.route("/paypal-webhook", methods=["POST"])
-def paypal_webhook():
-    data = request.json
-
-    # Čia reikėtų patikrinti PayPal signature (kol kas minimaliai darom)
-    if data and "event_type" in data:
-        if data["event_type"] == "CHECKOUT.ORDER.APPROVED":
-            # Ištraukiam pirkėjo info
-            payer_email = data["resource"]["payer"]["email_address"]
-            # Siunčiam produktą (čia galima padaryti DB lookup ir pan.)
-            # Pvz.: siunčiam nuorodą į PDF
-            bot.sendMessage(chat_id=os.getenv("TEST_CHAT_ID"), text=f"✅ Mokėjimas gautas iš {payer_email}\nŠtai tavo produktas: https://tavo-domenas.lt/download.zip")
-
-    return jsonify({"status": "ok"})
-
+# ---- ROUTES ----
 
 @app.route("/")
-def index():
-    return "Botas gyvas!"
+def home():
+    return "Bot is running!", 200
 
+
+# Telegram webhook
+@app.route("/webhook", methods=["POST"])
+def telegram_webhook():
+    update = request.get_json()
+
+    if "message" in update:
+        chat_id = update["message"]["chat"]["id"]
+        text = update["message"].get("text", "")
+
+        # Pvz.: vartotojas parašo /start
+        if text == "/start":
+            bot.send_message(chat_id=chat_id, text="Sveikas! Botas veikia 🚀")
+
+        # Pvz.: /buy
+        elif text == "/buy":
+            bot.send_message(
+                chat_id=chat_id,
+                text="Paspausk nuorodą apmokėjimui: https://www.paypal.com/paypalme/tavovardas/5"
+            )
+
+    return "ok", 200
+
+
+# PayPal webhook (čia ateina signalai iš PayPal API)
+@app.route("/paypal-webhook", methods=["POST"])
+def paypal_webhook():
+    data = request.get_json()
+    logging.info(f"PayPal data: {data}")
+
+    # pvz., patikrinti apmokėjimo statusą
+    if data and data.get("event_type") == "PAYMENT.CAPTURE.COMPLETED":
+        payer = data["resource"]["payer"]["email_address"]
+        amount = data["resource"]["amount"]["value"]
+
+        # siunčiam pranešimą į Telegram
+        bot.send_message(
+            chat_id=TELEGRAM_CHAT_ID,
+            text=f"Gautas mokėjimas ✅\nSuma: {amount} EUR\nNuo: {payer}"
+        )
+
+    return jsonify({"status": "success"}), 200
+
+
+# ---- RUN LOCAL (tik testams, Render naudoja gunicorn) ----
 if __name__ == "__main__":
-    app.run(port=10000)
+    app.run(host="0.0.0.0", port=5000)
