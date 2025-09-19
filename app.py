@@ -1,25 +1,21 @@
-import os
 import requests
 from flask import Flask, request
 
-app = Flask(__name__)
+TOKEN = "8312381945:AAH6vIHQj2JGo0UXdqLC69xkMsRgN0pPD3g"
+URL = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
+app = Flask(__name__)
 
 @app.route("/", methods=["POST"])
 def webhook():
     data = request.get_json()
-    if "message" in data:
+    if "message" in data and "text" in data["message"]:
         chat_id = data["message"]["chat"]["id"]
-        text = data["message"].get("text", "")
-        send_message(chat_id, f"Labas, veikia 👋 Gavau: {text}")
-    return {"ok": True}
+        text = data["message"]["text"]
 
-def send_message(chat_id, text):
-    url = f"{BASE_URL}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text}
-    requests.post(url, json=payload)
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+        # atsakymas atgal į Telegram
+        requests.post(URL, json={
+            "chat_id": chat_id,
+            "text": f"Gavai: {text}"
+        })
+    return "ok"
