@@ -3,35 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pirkti Premium (0.50 USD)</title>
-
-  <!-- LIVE SDK su tavo client-id -->
+  <title>Pirkti prenumeratą</title>
   <script src="https://www.paypal.com/sdk/js?client-id=ATyEJwotnM3GTUMHd-vU4dkvBnanzkWpNQQO2ETxnFKJodHnj3MnvFw90NdGc7ta9mUXn8Xh1FfBSNKn&currency=USD"></script>
 </head>
 <body>
-  <h3>Pirkti Premium (0.50 USD)</h3>
-  <div id="paypal-button-container"></div>
-
-  <script>
-    paypal.Buttons({
-      createOrder: function(data, actions) {
-        return actions.order.create({
-          purchase_units: [{
-            amount: { value: '0.50' },
-            description: "Premium Access"
-          }]
-        });
-      },
-      onApprove: function(data, actions) {
-        return actions.order.capture().then(function(details) {
-          alert('Mokėjimas atliktas, ačiū ' + details.payer.name.given_name + '!');
-        });
-      },
-      onError: function(err) {
-        console.error(err);
-        alert('Klaida mokėjimo metu');
-      }
-    }).render('#paypal-button-container');
-  </script>
+  <h3>Užsisakyk Premium (per PayPal)</h3>
+  <p>Paspausk: Prenumeruoti (atidarys PayPal).<br>
+     Šis mygtukas atlieka vienkartinį, o reali prenumerata per tavo PayPal planą.</p>
+  <div id="note">Rekomenduojama: naudokite /subscribe Telegram komandoje.</div>
 </body>
 </html>
