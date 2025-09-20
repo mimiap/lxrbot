@@ -1,31 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Pay with PayPal</title>
-  <script src="https://www.paypal.com/sdk/js?client-id=ATyEJwotnM3GTUMHd-vU4dkvBnanzkWpNQQO2ETxnFKJodHnj3MnvFw90NdGc7ta9mUXn8Xh1FfBSNKn&currency=USD"></script>
-</head>
-<body>
-  <h2>Pay with PayPal</h2>
-  <div id="paypal-button-container"></div>
-
-  <script>
-    paypal.Buttons({
-      createOrder: function(data, actions) {
-        return actions.order.create({
-          purchase_units: [{
-            amount: {
-              value: '5.00' // kaina USD, gali pakeisti
-            }
-          }]
-        });
-      },
-      onApprove: function(data, actions) {
-        return actions.order.capture().then(function(details) {
-          alert('Ačiū už mokėjimą, ' + details.payer.name.given_name + '!');
-        });
-      }
-    }).render('#paypal-button-container');
-  </script>
-</body>
+<html>
+  <head>
+    <title>PayPal mokėjimas</title>
+    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=EUR"></script>
+  </head>
+  <body>
+    <h1>Pirkti už 5 EUR</h1>
+    <div id="paypal-button-container"></div>
+    <script>
+      paypal.Buttons({
+        createOrder: async function() {
+          const response = await fetch("/create-order", { method: "POST" });
+          const order = await response.json();
+          return order.id;
+        },
+        onApprove: async function(data) {
+          const response = await fetch("/capture-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderID: data.orderID })
+          });
+          const details = await response.json();
+          alert("Mokėjimas atliktas!");
+        }
+      }).render("#paypal-button-container");
+    </script>
+  </body>
 </html>
