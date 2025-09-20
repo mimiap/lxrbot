@@ -1,4 +1,5 @@
 import express from "express";
+import fetch from "node-fetch";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -10,6 +11,35 @@ app.use(express.json());
 
 // HTML failai
 app.use(express.static(path.join(__dirname, "html")));
+
+// Telegram BOT
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+// PayPal webhook endpoint
+app.post("/webhook", async (req, res) => {
+  const event = req.body;
+
+  try {
+    if (event.event_type === "CHECKOUT.ORDER.APPROVED" || event.event_type === "PAYMENT.CAPTURE.COMPLETED") {
+      const payerName = event.resource?.payer?.name?.given_name || "Vartotojas";
+      const amount = event.resource?.purchase_units?.[0]?.amount?.value || "???";
+
+      // pranešimas į Telegram
+      const message = `✅ Naujas mokėjimas!\n👤 ${payerName}\n💵 ${amount} ${event.resource?.purchase_units?.[0]?.amount?.currency_code}`;
+      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message })
+      });
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Webhook klaida:", err);
+    res.sendStatus(500);
+  }
+});
 
 // start server
 const PORT = process.env.PORT || 10000;
