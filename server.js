@@ -9,14 +9,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-// HTML failai
+// static files
 app.use(express.static(path.join(__dirname, "html")));
 
-// Telegram BOT
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// PayPal webhook endpoint
+// PayPal webhook handler
 app.post("/webhook", async (req, res) => {
   const event = req.body;
 
@@ -25,7 +24,6 @@ app.post("/webhook", async (req, res) => {
       const payerName = event.resource?.payer?.name?.given_name || "Vartotojas";
       const amount = event.resource?.purchase_units?.[0]?.amount?.value || "???";
 
-      // pranešimas į Telegram
       const message = `✅ Naujas mokėjimas!\n👤 ${payerName}\n💵 ${amount} ${event.resource?.purchase_units?.[0]?.amount?.currency_code}`;
       await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
         method: "POST",

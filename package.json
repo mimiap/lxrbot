@@ -1,6 +1,7 @@
 {
   "name": "lxrbot",
   "version": "1.0.0",
+  "description": "Telegram + PayPal bot",
   "main": "server.js",
   "type": "module",
   "scripts": {
