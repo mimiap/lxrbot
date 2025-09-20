@@ -61,3 +61,14 @@ app.post("/webhook", async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 Serveris paleistas ant porto ${PORT}`));
+const express = require("express");
+const path = require("path");
+
+const app = express();
+
+// statinis HTML servinimas
+app.use(express.static(path.join(__dirname, "html")));
+
+app.listen(process.env.PORT || 10000, () => {
+  console.log("Serveris paleistas ant porto", process.env.PORT || 10000);
+});
