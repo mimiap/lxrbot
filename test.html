@@ -2,25 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PayPal Live Payment</title>
-  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=EUR"></script>
+  <title>PayPal LIVE Checkout</title>
+  <script src="https://www.paypal.com/sdk/js?client-id=Abug3umcYdnEXAQr8kAW8LKmgHZ8znHR5uf9xusfszTp0Lb-U71VgI3PVbIbwSs3qE7VvrA8ULsbLqoh&currency=EUR"></script>
 </head>
 <body>
-  <h2>Testinis mokėjimas</h2>
+  <h2>Pirkti produktą</h2>
   <div id="paypal-button-container"></div>
 
   <script>
     paypal.Buttons({
-      createOrder: async function() {
-        const response = await fetch("/create-order", { method: "POST" });
-        const order = await response.json();
-        return order.id;
+      createOrder: function(data, actions) {
+        return actions.order.create({
+          purchase_units: [{
+            amount: { value: '5.00' } // suma €
+          }]
+        });
       },
-      onApprove: async function(data) {
-        const response = await fetch(`/capture-order/${data.orderID}`, { method: "POST" });
-        const orderData = await response.json();
-        alert("Mokėjimas sėkmingas!");
-        console.log(orderData);
+      onApprove: function(data, actions) {
+        return actions.order.capture().then(function(details) {
+          alert('Apmokėjimas pavyko, ačiū ' + details.payer.name.given_name + '!');
+        });
       }
     }).render('#paypal-button-container');
   </script>
